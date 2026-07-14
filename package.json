@@ -4,6 +4,10 @@
   "description": "Local-first dashboard for what your Claude Code, Desktop, Cowork, and Agent-SDK usage actually costs. Zero install, data never leaves your machine.",
   "type": "module",
   "license": "MIT",
+  "author": "Parth Agrawal <agrawalparth08@gmail.com>",
+  "repository": { "type": "git", "url": "git+https://github.com/agrawalparth08/claudemeter.git" },
+  "homepage": "https://github.com/agrawalparth08/claudemeter#readme",
+  "bugs": { "url": "https://github.com/agrawalparth08/claudemeter/issues" },
   "bin": { "claudemeter": "bin/claudemeter.mjs" },
   "engines": { "node": ">=16" },
   "scripts": {
