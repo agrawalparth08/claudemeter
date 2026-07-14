@@ -12,6 +12,6 @@
     "build": "node build.mjs",
     "test": "python3 test/make_fixtures.py && node test/parity.mjs"
   },
-  "files": ["index.html", "etl.py", "etl.js", "build.mjs", "bin", "test", "README.md", "LICENSE"],
+  "files": ["index.html", "etl.js", "etl.py", "bin", "README.md", "LICENSE"],
   "keywords": ["claude", "claude-code", "cowork", "usage", "cost", "dashboard", "tokens", "local-first"]
 }
