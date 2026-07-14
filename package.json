@@ -1,0 +1,17 @@
+{
+  "name": "claudemeter",
+  "version": "1.0.0",
+  "description": "Local-first dashboard for what your Claude Code, Desktop, Cowork, and Agent-SDK usage actually costs. Zero install, data never leaves your machine.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "claudemeter": "bin/claudemeter.mjs" },
+  "engines": { "node": ">=16" },
+  "scripts": {
+    "start": "node bin/claudemeter.mjs",
+    "fixtures": "python3 test/make_fixtures.py",
+    "build": "node build.mjs",
+    "test": "python3 test/make_fixtures.py && node test/parity.mjs"
+  },
+  "files": ["index.html", "etl.py", "etl.js", "build.mjs", "bin", "test", "README.md", "LICENSE"],
+  "keywords": ["claude", "claude-code", "cowork", "usage", "cost", "dashboard", "tokens", "local-first"]
+}

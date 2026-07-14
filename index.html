@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>claudemeter · Claude usage &amp; cost</title>
+<style>
+  :root {
+    --surface-1:#fcfcfb; --page-plane:#f9f9f7; --text-primary:#0b0b0b; --text-secondary:#52514e;
+    --text-muted:#898781; --gridline:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10); --card-bg:#ffffff;
+    --surface-blue:#2a78d6; --surface-aqua:#1baf7a; --surface-green:#008300; --surface-yellow:#eda100;
+    --cowork-tint:rgba(0,131,0,0.06); --cowork-accent:#008300;
+    --model-blue:#2a78d6; --model-aqua:#1baf7a; --model-yellow:#eda100; --model-green:#008300;
+    --model-violet:#4a3aa7; --model-red:#e34948; --accent:#2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1:#1a1a19; --page-plane:#0d0d0d; --text-primary:#ffffff; --text-secondary:#c3c2b7;
+      --text-muted:#898781; --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10); --card-bg:#232322;
+      --surface-blue:#3987e5; --surface-aqua:#199e70; --surface-green:#2fa84f; --surface-yellow:#c98500;
+      --cowork-tint:rgba(47,168,79,0.10); --cowork-accent:#2fa84f;
+      --model-blue:#3987e5; --model-aqua:#199e70; --model-yellow:#c98500; --model-green:#2fa84f;
+      --model-violet:#9085e9; --model-red:#e66767; --accent:#3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface-1:#1a1a19; --page-plane:#0d0d0d; --text-primary:#ffffff; --text-secondary:#c3c2b7;
+    --text-muted:#898781; --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10); --card-bg:#232322;
+    --surface-blue:#3987e5; --surface-aqua:#199e70; --surface-green:#2fa84f; --surface-yellow:#c98500;
+    --cowork-tint:rgba(47,168,79,0.10); --cowork-accent:#2fa84f;
+    --model-blue:#3987e5; --model-aqua:#199e70; --model-yellow:#c98500; --model-green:#2fa84f;
+    --model-violet:#9085e9; --model-red:#e66767; --accent:#3987e5;
+  }
+  :root[data-theme="light"] {
+    --surface-1:#fcfcfb; --page-plane:#f9f9f7; --text-primary:#0b0b0b; --text-secondary:#52514e;
+    --text-muted:#898781; --gridline:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10); --card-bg:#ffffff;
+    --surface-blue:#2a78d6; --surface-aqua:#1baf7a; --surface-green:#008300; --surface-yellow:#eda100;
+    --cowork-tint:rgba(0,131,0,0.06); --cowork-accent:#008300;
+    --model-blue:#2a78d6; --model-aqua:#1baf7a; --model-yellow:#eda100; --model-green:#008300;
+    --model-violet:#4a3aa7; --model-red:#e34948; --accent:#2a78d6;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:var(--page-plane); color:var(--text-primary);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-variant-numeric:tabular-nums; }
+  body { padding:24px 20px 60px; max-width:1180px; margin:0 auto; }
+
+  header.top { margin-bottom:20px; }
+  header.top h1 { font-size:22px; margin:0 0 4px; letter-spacing:-0.01em; }
+  header.top .sub { color:var(--text-secondary); font-size:13.5px; }
+  .topbar-actions { float:right; display:flex; gap:8px; }
+
+  .caveat { margin-top:14px; padding:12px 14px; background:var(--card-bg); border:1px solid var(--border);
+    border-left:3px solid var(--surface-yellow); border-radius:6px; font-size:12.5px; color:var(--text-secondary); line-height:1.5; }
+  .caveat b { color:var(--text-primary); }
+
+  .stat-row { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:20px 0; }
+  .stat-tile { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+  .stat-tile .label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; }
+  .stat-tile .value { font-size:21px; font-weight:600; margin-top:4px; }
+
+  section.card { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:18px 20px 20px; margin-bottom:20px; }
+  section.card h2 { font-size:15px; margin:0 0 2px; }
+  section.card .card-sub { font-size:12px; color:var(--text-muted); margin-bottom:14px; }
+
+  /* Cowork spotlight strip */
+  .cowork-strip { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
+    background:var(--cowork-tint); border:1px solid var(--border); border-left:3px solid var(--cowork-accent);
+    border-radius:10px; padding:15px 18px; margin-bottom:20px; }
+  .cowork-strip.empty { background:transparent; border-left-style:dashed; border-left-color:var(--baseline); }
+  .cowork-strip .hex { font-size:24px; color:var(--cowork-accent); line-height:1; }
+  .cowork-strip.empty .hex { color:var(--text-muted); }
+  .cowork-strip .eyebrow { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--cowork-accent); font-weight:600; margin-bottom:4px; }
+  .cowork-strip.empty .eyebrow { color:var(--text-muted); }
+  .cowork-strip .head { font-size:14.5px; font-weight:600; margin-bottom:3px; }
+  .cowork-strip .desc { font-size:12.5px; color:var(--text-secondary); line-height:1.5; }
+  .cowork-strip .desc b { color:var(--text-primary); }
+  .cowork-strip .figures { text-align:right; }
+  .cowork-strip .figures .big { font-size:20px; font-weight:600; }
+  .cowork-strip .figures .small { font-size:11px; color:var(--text-muted); }
+  .cowork-strip .microbar { height:4px; width:140px; background:var(--gridline); border-radius:2px; overflow:hidden; margin-top:6px; }
+  .cowork-strip .microbar > div { height:100%; background:var(--cowork-accent); }
+  @media (max-width:640px) { .cowork-strip { grid-template-columns:auto 1fr; } .cowork-strip .figures { grid-column:2; text-align:left; } }
+
+  .seg-control { display:inline-flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; font-size:12px; }
+  .seg-control button { background:transparent; border:none; color:var(--text-secondary); padding:6px 12px; cursor:pointer; font:inherit; }
+  .seg-control button.active { background:var(--accent); color:#fff; }
+  .seg-control button + button { border-left:1px solid var(--border); }
+  .chart-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+
+  #dayChart { width:100%; height:300px; display:block; overflow:visible; }
+  .bar-seg { cursor:pointer; }
+  .axis-label { fill:var(--text-muted); font-size:10px; }
+  .gridline { stroke:var(--gridline); stroke-width:1; }
+  .baseline { stroke:var(--baseline); stroke-width:1; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--text-secondary); }
+  .legend .item { display:flex; align-items:center; gap:6px; }
+  .legend .swatch { width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  .tooltip { position:fixed; pointer-events:none; background:var(--text-primary); color:var(--page-plane);
+    font-size:12px; padding:8px 10px; border-radius:6px; line-height:1.5; opacity:0; transition:opacity .08s; z-index:50; max-width:260px; }
+
+  .two-col { display:grid; grid-template-columns:1.3fr 1fr; gap:20px; }
+  @media (max-width:860px) {
+    .two-col { grid-template-columns:1fr; }
+    .stat-row { grid-template-columns:repeat(2,1fr); }
+  }
+
+  .model-row, .surface-row { display:grid; grid-template-columns:130px 1fr 90px; align-items:center; gap:10px; font-size:12.5px; margin-bottom:9px; }
+  .model-row .name, .surface-row .name { color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .model-row .bar-track, .surface-row .bar-track { min-width:0; }
+  .surface-row { grid-template-columns:210px 1fr 90px; }
+  .surface-row.is-cowork .name { font-weight:600; }
+  .surface-row .dot { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .bar-track { height:14px; background:var(--gridline); border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px 0 0 3px; }
+  .model-row .value, .surface-row .value { text-align:right; color:var(--text-secondary); }
+  /* mobile row override, placed AFTER the base row rules so it wins on source order */
+  @media (max-width:860px) { .model-row, .surface-row { grid-template-columns:minmax(0,1.3fr) minmax(24px,1fr) 84px; } }
+
+  .insights { display:grid; grid-template-columns:1fr 1fr; gap:12px 22px; }
+  @media (max-width:700px) { .insights { grid-template-columns:1fr; } }
+  .insight { font-size:12.5px; line-height:1.5; color:var(--text-secondary); display:flex; gap:9px; }
+  .insight .mk { color:var(--accent); flex-shrink:0; font-weight:700; }
+  .insight.warn .mk { color:var(--surface-yellow); }
+  .insight.cw .mk { color:var(--cowork-accent); }
+  .insight b { color:var(--text-primary); }
+
+  table.sessions { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.sessions th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted);
+    padding:6px 8px; border-bottom:1px solid var(--gridline); cursor:pointer; user-select:none; white-space:nowrap; }
+  table.sessions th:hover { color:var(--text-primary); }
+  table.sessions td { padding:7px 8px; border-bottom:1px solid var(--gridline); vertical-align:top; }
+  table.sessions tr.cowork-row td:first-child { box-shadow:inset 2px 0 0 var(--cowork-accent); }
+  table.sessions td.cost { text-align:right; font-weight:600; white-space:nowrap; }
+  table.sessions td.num { text-align:right; color:var(--text-secondary); white-space:nowrap; }
+  .badge { display:inline-block; font-size:10.5px; padding:2px 7px; border-radius:10px; color:#fff; white-space:nowrap; }
+  .title-cell { max-width:260px; }
+  .title-cell .t { font-weight:500; }
+  .title-cell .p { color:var(--text-muted); font-size:11px; }
+
+  footer.foot { margin-top:26px; font-size:11.5px; color:var(--text-muted); line-height:1.6; border-top:1px solid var(--gridline); padding-top:14px; }
+  footer.foot a { color:var(--accent); }
+  code { background:var(--gridline); padding:1px 5px; border-radius:4px; font-size:11px; }
+
+  .btn { display:inline-block; background:var(--accent); color:#fff; border:none; font:inherit; font-weight:600; cursor:pointer; border-radius:9px; }
+  .btn.lg { font-size:15px; padding:13px 26px; }
+  .btn.sm { font-size:12px; padding:7px 14px; }
+  .btn.ghost { background:transparent; color:var(--accent); border:1px solid var(--border); font-weight:500; }
+
+  .landing { max-width:680px; margin:5vh auto 0; text-align:center; }
+  .landing .brand { font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:10px; }
+  .landing h1 { font-size:27px; margin:0 0 12px; letter-spacing:-0.01em; }
+  .landing .lede { font-size:15px; color:var(--text-secondary); line-height:1.6; margin-bottom:8px; }
+  .landing .privacy { font-size:12.5px; color:var(--text-muted); margin:14px 0 24px; }
+  .landing .privacy b { color:var(--text-primary); }
+  .path-list { text-align:left; max-width:620px; margin:22px auto 0; font-size:12.5px; color:var(--text-secondary);
+    background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:14px 16px; line-height:1.7; }
+  .path-list .p { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:var(--text-primary); }
+  .picker-note { font-size:12px; color:var(--text-muted); margin-top:16px; line-height:1.6; }
+  .progress { margin-top:26px; font-size:13px; color:var(--text-secondary); }
+  .progress .bar-wrap { height:6px; background:var(--gridline); border-radius:3px; overflow:hidden; margin:12px auto 0; max-width:420px; }
+  .progress .bar { height:100%; background:var(--accent); width:0%; transition:width .1s; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- ================= LANDING ================= -->
+<div id="landing" class="landing hidden">
+  <div class="brand">◆ claudemeter</div>
+  <h1>What does your Claude usage actually cost?</h1>
+  <p class="lede">A cost breakdown of your Claude Code, Claude&nbsp;Desktop, <b style="color:var(--cowork-accent)">Claude&nbsp;Cowork</b>, and Agent-SDK usage, by day, model, surface, and session.</p>
+  <p class="privacy">🔒 <b>Local-only.</b> Your transcripts are read and analysed entirely inside this page. No upload, no server, no network, no telemetry. Close the tab and nothing persists.</p>
+
+  <button class="btn lg" id="pickBtn">Choose your Claude folder</button>
+  <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" />
+
+  <div class="path-list">
+    <div style="font-weight:600;color:var(--text-primary);margin-bottom:6px;">Which folder do I pick?</div>
+    Everything under the folder is scanned; you can pick more than once to add sources.
+    <div style="margin-top:9px;">→ <span class="p">~/.claude</span> &nbsp;<span style="color:var(--text-muted)">terminal + Desktop + Agent-SDK usage (all platforms)</span></div>
+    <div>→ <span class="p">~/Library/Application&nbsp;Support/Claude</span> &nbsp;<span style="color:var(--text-muted)">adds Claude&nbsp;Cowork usage + session titles (macOS)</span></div>
+    <div style="margin-top:9px;color:var(--text-muted);"><b style="color:var(--text-primary)">macOS note:</b> both folders start with a dot or live under a hidden <span class="p">~/Library</span>, so they're hidden in the file dialog. Press <b>⌘⇧.</b> (Command-Shift-Period) in the picker to reveal them. To capture <b style="color:var(--cowork-accent)">everything including Cowork</b>, add both.</div>
+  </div>
+  <div class="picker-note">Prefer a terminal? Run <code>python3 etl.py</code> once and serve this folder over HTTP for an instant, refreshable dashboard. See the README.</div>
+</div>
+
+<!-- ================= LOADING ================= -->
+<div id="loading" class="landing hidden">
+  <div class="brand">◆ claudemeter</div>
+  <h1>Reading your transcripts&hellip;</h1>
+  <div class="progress">
+    <div id="progressText">Scanning files&hellip;</div>
+    <div class="bar-wrap"><div class="bar" id="progressBar"></div></div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">All parsing happens locally in this tab.</div>
+  </div>
+</div>
+
+<!-- ================= DASHBOARD ================= -->
+<div id="dashboard" class="hidden">
+  <header class="top">
+    <div class="topbar-actions">
+      <button class="btn sm ghost" id="exportBtn">Export data.json</button>
+      <button class="btn sm ghost" id="repickBtn">Load a folder</button>
+    </div>
+    <h1>◆ claudemeter</h1>
+    <div class="sub" id="subHeader"></div>
+    <div class="caveat" id="caveat"></div>
+  </header>
+
+  <div class="stat-row" id="statRow"></div>
+  <div id="coworkSpot"></div>
+
+  <section class="card">
+    <div class="chart-toolbar">
+      <div>
+        <h2>Day by day</h2>
+        <div class="card-sub">Estimated cost per day, stacked by <span id="stackModeLabel">surface</span></div>
+      </div>
+      <div class="seg-control" id="stackToggle">
+        <button data-mode="surface" class="active">By surface</button>
+        <button data-mode="model">By model</button>
+      </div>
+    </div>
+    <svg id="dayChart"></svg>
+    <div class="legend" id="dayLegend"></div>
+  </section>
+
+  <section class="card">
+    <h2>Insights</h2>
+    <div class="card-sub">Computed from your data: where the spend concentrates and why</div>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <div class="two-col">
+    <section class="card">
+      <h2>Model breakdown</h2>
+      <div class="card-sub">Estimated cost by model, all-time</div>
+      <div id="modelBars"></div>
+    </section>
+    <section class="card">
+      <h2>Surface breakdown</h2>
+      <div class="card-sub">Estimated cost by surface, all-time</div>
+      <div id="surfaceBars"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Sessions</h2>
+    <div class="card-sub">Top sessions by estimated cost. Click a column header to re-sort.</div>
+    <div style="overflow-x:auto;">
+    <table class="sessions" id="sessionsTable">
+      <thead><tr>
+        <th data-key="rank">#</th><th data-key="title">Session</th><th data-key="surface">Surface</th>
+        <th data-key="cost">Cost</th><th data-key="tokens">Tokens</th><th data-key="count">Calls</th><th data-key="last_ts">Last active</th>
+      </tr></thead>
+      <tbody id="sessionsBody"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer class="foot" id="footNote"></footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ==CLAUDEMETER_ETL_START== (auto-generated from etl.js by build.mjs; DO NOT EDIT here; edit etl.js then run `node build.mjs`)
+/* ============================================================================
+ * claudemeter; shared ETL core (single source of truth).
+ *
+ * This module is consumed two ways:
+ *   1. The browser (index.html) inlines it (via build.mjs) so the dashboard can
+ *      compute cost entirely client-side from a picked folder; zero install.
+ *   2. test/parity.mjs imports it in node and diffs its output against etl.py
+ *      over shared fixtures, so the JS and Python implementations can never drift.
+ *
+ * Every behaviour here mirrors etl.py exactly. If you change pricing or logic,
+ * change it in BOTH files in the same commit; the parity test enforces it.
+ * ==========================================================================*/
+
+// $/1M tokens (input, output). Cache write = input*1.25 (5m) / *2 (1h). Cache read = input*0.1
+const PRICING = {
+  "claude-fable-5":   { input: 10.00, output: 50.00 },
+  "claude-mythos-5":  { input: 10.00, output: 50.00 },
+  "claude-opus-4-8":  { input: 5.00,  output: 25.00 },
+  "claude-opus-4-7":  { input: 5.00,  output: 25.00 },
+  "claude-opus-4-6":  { input: 5.00,  output: 25.00 },
+  "claude-opus-4-5":  { input: 5.00,  output: 25.00 },
+  "claude-opus-4-1":  { input: 5.00,  output: 25.00 },
+  "claude-opus-4-0":  { input: 5.00,  output: 25.00 },
+  "claude-sonnet-4-6":{ input: 3.00,  output: 15.00 },
+  "claude-sonnet-4-5":{ input: 3.00,  output: 15.00 },
+  "claude-sonnet-4-0":{ input: 3.00,  output: 15.00 },
+  "claude-haiku-4-5": { input: 1.00,  output: 5.00 },
+};
+const SONNET5_INTRO_CUTOVER = "2026-08-31";
+const SONNET5_INTRO = { input: 2.00, output: 10.00 };
+const SONNET5_STANDARD = { input: 3.00, output: 15.00 };
+
+const ENTRYPOINT_LABELS = {
+  "cli": "Claude Code (terminal)",
+  "claude-desktop": "Claude Code (Desktop)",
+  "sdk-cli": "Programmatic (Agent SDK apps)",
+  "local-agent": "Claude Cowork",
+};
+const SURFACE_ORDER = [
+  "Claude Code (terminal)",
+  "Claude Code (Desktop)",
+  "Claude Cowork",
+  "Programmatic (Agent SDK apps)",
+  "Other / unknown",
+];
+
+function normalizeModel(model) {
+  if (!model) return "unknown";
+  let m = model;
+  const b = m.indexOf("[");
+  if (b >= 0) m = m.slice(0, b);
+  if (m.startsWith("claude-haiku-4-5")) m = "claude-haiku-4-5";
+  return m;
+}
+
+function getPricing(model, dayStr) {
+  if (model === "claude-sonnet-5") {
+    return (dayStr && dayStr < SONNET5_INTRO_CUTOVER) ? SONNET5_INTRO : SONNET5_STANDARD;
+  }
+  return PRICING[model] || { input: null, output: null };
+}
+
+function computeCost(model, dayStr, usage) {
+  const p = getPricing(model, dayStr);
+  if (p.input == null) return null;
+  const input_tok = usage.input_tokens || 0;
+  const output_tok = usage.output_tokens || 0;
+  const cache_read = usage.cache_read_input_tokens || 0;
+  const cache_creation = usage.cache_creation_input_tokens || 0;
+  const cc = usage.cache_creation || {};
+  let cc_5m = cc.ephemeral_5m_input_tokens || 0;
+  let cc_1h = cc.ephemeral_1h_input_tokens || 0;
+  // if the breakdown is empty but there IS cache-creation, treat it all as 5m (mirrors etl.py)
+  if ((cc_5m + cc_1h) === 0 && cache_creation > 0) cc_5m = cache_creation;
+  const PER_M = 1e6;
+  const cost = (
+    input_tok * p.input +
+    output_tok * p.output +
+    cc_5m * p.input * 1.25 +
+    cc_1h * p.input * 2.0 +
+    cache_read * p.input * 0.1
+  ) / PER_M;
+  return {
+    cost,
+    input_tokens: input_tok,
+    output_tokens: output_tok,
+    cache_read_tokens: cache_read,
+    cache_write_tokens: cc_5m + cc_1h,
+    total_tokens: input_tok + output_tok + cache_read + cc_5m + cc_1h,
+  };
+}
+
+function labelSurface(entrypoint) {
+  return ENTRYPOINT_LABELS[entrypoint] || (entrypoint ? String(entrypoint) : "Other / unknown");
+}
+
+// Returns a fn: (isoTimestamp) -> "YYYY-MM-DD" in the given IANA tz (null = local).
+function makeDayKeyFn(tz) {
+  const opts = { year: "numeric", month: "2-digit", day: "2-digit" };
+  if (tz) opts.timeZone = tz;
+  const fmt = new Intl.DateTimeFormat("en-CA", opts); // en-CA => ISO YYYY-MM-DD order
+  return (iso) => { const d = new Date(iso); return isNaN(d.getTime()) ? null : fmt.format(d); };
+}
+
+// Classify a file by its relative path + basename.
+function classifyPath(relPath, baseName) {
+  if (baseName === "audit.jsonl") return { kind: "skip" };
+  if (baseName.endsWith(".jsonl")) {
+    const isCowork = relPath.includes("local-agent-mode-sessions");
+    let project;
+    const m = relPath.match(/local_[0-9a-f-]{6,}/);
+    if (isCowork && m) project = m[0];
+    else {
+      const after = relPath.split("/projects/")[1];
+      project = after ? after.split("/")[0] : (relPath.split("/")[0] || "root");
+    }
+    return { kind: "transcript", isCowork, project };
+  }
+  if (/^local_[^/]*\.json$/.test(baseName)) return { kind: "title" };
+  return { kind: "skip" };
+}
+
+// Parse a session-title metadata json object -> {cliSessionId, title, processName} | null
+function extractTitleRecord(obj) {
+  if (!obj || !obj.cliSessionId) return null;
+  return {
+    cliSessionId: obj.cliSessionId,
+    title: obj.title || null,
+    processName: obj.processName || obj.vmProcessName || null,
+  };
+}
+
+function createAgg() {
+  return {
+    by_day: {}, by_model: {}, by_surface: {}, by_session: {},
+    surface_sessions: {},   // surface -> Set(sessionId), for an accurate per-surface session count
+    unknown_models: {}, total_messages: 0, parsed_messages: 0,
+    earliest: null, latest: null,
+  };
+}
+
+/*
+ * Fold ONE transcript file into the aggregator. `lineIterable` yields raw line
+ * strings (browser: from a stream; node: from split()). Dedup is per-file, by
+ * requestId (then message.id, then uuid), keeping the last-seen line; because
+ * Claude writes one line per content block, all repeating the same usage.
+ */
+async function foldFile(agg, fileMeta, lineIterable, dayKeyFn) {
+  // Per-file dedup by requestId, keeping only the FIELDS we actually price -
+  // never the whole parsed line (message.content / tool_result blocks can be
+  // huge; retaining them to end-of-file would defeat streaming and can OOM the
+  // tab). Output is identical to storing the full record.
+  const perRequest = new Map();
+  let n = 0;
+  for await (const raw of lineIterable) {
+    const line = raw.trim();
+    if (!line) continue;
+    let d;
+    try { d = JSON.parse(line); } catch (_) { continue; }
+    if (d.type !== "assistant") continue;
+    const msg = d.message || {};
+    if (!msg.usage) continue;
+    if (msg.model === "<synthetic>") continue;
+    const key = d.requestId || (msg.id ? "mid:" + msg.id : d.uuid);
+    perRequest.set(key, {
+      model: msg.model, ts: d.timestamp, usage: msg.usage,
+      entrypoint: d.entrypoint, sessionId: d.sessionId,
+    });
+    if ((++n & 16383) === 0) await Promise.resolve(); // let a giant single-line-heavy file breathe
+  }
+
+  let f = 0;
+  for (const rec of perRequest.values()) {
+    if ((++f & 8191) === 0) await new Promise(r => setTimeout(r)); // yield within a very large file so the UI/progress can repaint
+    const usage = rec.usage;
+    agg.total_messages++;
+    const model = normalizeModel(rec.model);
+    const ts = rec.ts;
+    if (!ts) continue;
+    const day = dayKeyFn(ts);
+    if (!day) continue;
+    if (agg.earliest === null || ts < agg.earliest) agg.earliest = ts;
+    if (agg.latest === null || ts > agg.latest) agg.latest = ts;
+
+    const r = computeCost(model, day, usage);
+    if (r === null) { agg.unknown_models[model] = (agg.unknown_models[model] || 0) + 1; continue; }
+    agg.parsed_messages++;
+
+    const surface = fileMeta.isCowork ? "Claude Cowork" : labelSurface(rec.entrypoint);
+    const sid = rec.sessionId;
+
+    const db = agg.by_day[day] || (agg.by_day[day] = { cost: 0, tokens: 0, count: 0, by_model: {}, by_surface: {} });
+    db.cost += r.cost; db.tokens += r.total_tokens; db.count++;
+    const dm = db.by_model[model] || (db.by_model[model] = { cost: 0, tokens: 0, count: 0 });
+    dm.cost += r.cost; dm.tokens += r.total_tokens; dm.count++;
+    const ds = db.by_surface[surface] || (db.by_surface[surface] = { cost: 0, tokens: 0, count: 0 });
+    ds.cost += r.cost; ds.tokens += r.total_tokens; ds.count++;
+
+    const mm = agg.by_model[model] || (agg.by_model[model] = { cost: 0, tokens: 0, count: 0, input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0 });
+    mm.cost += r.cost; mm.tokens += r.total_tokens; mm.count++;
+    mm.input_tokens += r.input_tokens; mm.output_tokens += r.output_tokens;
+    mm.cache_read_tokens += r.cache_read_tokens; mm.cache_write_tokens += r.cache_write_tokens;
+
+    const sm = agg.by_surface[surface] || (agg.by_surface[surface] = { cost: 0, tokens: 0, count: 0 });
+    sm.cost += r.cost; sm.tokens += r.total_tokens; sm.count++;
+
+    if (sid) {
+      (agg.surface_sessions[surface] || (agg.surface_sessions[surface] = new Set())).add(sid);
+      const ss = agg.by_session[sid] || (agg.by_session[sid] = { cost: 0, tokens: 0, count: 0, models: {}, surface, project: fileMeta.project, first_ts: ts, last_ts: ts });
+      ss.cost += r.cost; ss.tokens += r.total_tokens; ss.count++;
+      ss.models[model] = (ss.models[model] || 0) + 1;
+      if (ts < ss.first_ts) ss.first_ts = ts;
+      if (ts > ss.last_ts) ss.last_ts = ts;
+    }
+  }
+}
+
+function percentile(sortedAsc, p) {
+  if (!sortedAsc.length) return 0;
+  const idx = Math.min(sortedAsc.length - 1, Math.floor(p * sortedAsc.length));
+  return sortedAsc[idx];
+}
+
+// Produce the final data.json-shaped object.
+function finalize(agg, { tz, titles, generatedAt } = {}) {
+  titles = titles || {};
+  const session_list = Object.entries(agg.by_session).map(([sid, s]) => ({
+    sessionId: sid, title: (titles[sid] || {}).title || null,
+    project: s.project, surface: s.surface, cost: s.cost, tokens: s.tokens, count: s.count,
+    models: s.models, first_ts: s.first_ts, last_ts: s.last_ts,
+  }));
+
+  const counts = session_list.map(s => s.count).sort((a, b) => a - b);
+  const byCount = [...session_list].sort((a, b) => b.count - a.count);
+  const longest = byCount[0] || null;
+  const session_stats = {
+    count: session_list.length,
+    median_msgs: percentile(counts, 0.5),
+    p90_msgs: percentile(counts, 0.9),
+    max_msgs: counts.length ? counts[counts.length - 1] : 0,
+    over_500: counts.filter(c => c > 500).length,
+    over_1000: counts.filter(c => c > 1000).length,
+    over_2000: counts.filter(c => c > 2000).length,
+    longest_session: longest ? { title: longest.title, msgs: longest.count, cost: longest.cost, surface: longest.surface } : null,
+  };
+
+  // accurate distinct-session count per surface (not derivable from top_sessions, which is capped)
+  for (const s of Object.keys(agg.by_surface)) {
+    agg.by_surface[s].sessions = agg.surface_sessions[s] ? agg.surface_sessions[s].size : 0;
+  }
+
+  session_list.sort((a, b) => b.cost - a.cost);
+  const day_list = Object.keys(agg.by_day).sort().map(day => ({ day, ...agg.by_day[day] }));
+  const total_cost = day_list.reduce((a, d) => a + d.cost, 0);
+  const total_tokens = day_list.reduce((a, d) => a + d.tokens, 0);
+
+  return {
+    generated_at: generatedAt || null,
+    earliest_ts: agg.earliest, latest_ts: agg.latest,
+    timezone: tz || "local",
+    total_cost, total_tokens,
+    total_messages: agg.total_messages, parsed_messages: agg.parsed_messages,
+    unknown_models: agg.unknown_models,
+    days: day_list, by_model: agg.by_model, by_surface: agg.by_surface,
+    top_sessions: session_list.slice(0, 100), total_sessions: session_list.length,
+    session_stats,
+  };
+}
+// ==CLAUDEMETER_ETL_END==
+
+/* ============================================================================
+   UI-only config (colours & labels; logic lives in the inlined ETL above)
+   ============================================================================ */
+const SURFACE_COLOR_VARS = {
+  "Claude Code (terminal)": "--surface-blue",
+  "Claude Code (Desktop)": "--surface-aqua",
+  "Claude Cowork": "--surface-green",
+  "Programmatic (Agent SDK apps)": "--surface-yellow",
+  "Other / unknown": "--text-muted",
+};
+const SURFACE_BADGE = {
+  "Claude Code (terminal)": "Terminal", "Claude Code (Desktop)": "Desktop",
+  "Claude Cowork": "Cowork", "Programmatic (Agent SDK apps)": "SDK app", "Other / unknown": "Other",
+};
+const MODEL_COLOR_ORDER = ["--model-blue","--model-aqua","--model-yellow","--model-green","--model-violet","--model-red"];
+
+/* ============================================================================
+   Browser ingest glue: streams picked files through the shared ETL
+   ============================================================================ */
+async function* iterLines(file) {
+  if (file.stream && typeof TextDecoderStream !== "undefined") {
+    const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += value;
+      let idx;
+      while ((idx = buf.indexOf("\n")) >= 0) { yield buf.slice(0, idx); buf = buf.slice(idx + 1); }
+    }
+    if (buf.length) yield buf;
+  } else {
+    // Fallback for engines without TextDecoderStream: still avoid holding a full
+    // line array; scan the text with indexOf and yield one slice at a time.
+    const text = await file.text();
+    let start = 0, idx;
+    while ((idx = text.indexOf("\n", start)) >= 0) { yield text.slice(start, idx); start = idx + 1; }
+    if (start < text.length) yield text.slice(start);
+    return;
+  }
+}
+
+async function ingestFolder(fileObjs, { onProgress } = {}) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  const dayKey = makeDayKeyFn(tz);
+  const seen = new Set();
+  const transcripts = [];
+  const titles = {};
+
+  for (const f of fileObjs) {
+    const rel = f.webkitRelativePath || f.name;
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+    const c = classifyPath(rel, f.name);
+    if (c.kind === "transcript") transcripts.push({ f, rel, isCowork: c.isCowork, project: c.project });
+    else if (c.kind === "title") {
+      try { const rec = extractTitleRecord(JSON.parse(await f.text())); if (rec) titles[rec.cliSessionId] = rec; } catch (_) {}
+    }
+  }
+  transcripts.sort((a, b) => (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0)); // deterministic first-seen
+
+  const agg = createAgg();
+  const total = transcripts.length;
+  for (let i = 0; i < total; i++) {
+    const t = transcripts[i];
+    await foldFile(agg, { isCowork: t.isCowork, project: t.project }, iterLines(t.f), dayKey);
+    if (onProgress) onProgress(i + 1, total);
+    if ((i & 7) === 0) await new Promise(r => setTimeout(r, 0)); // keep UI responsive
+  }
+  const out = finalize(agg, { tz, titles, generatedAt: new Date().toISOString() });
+  out._source = "browser";
+  return out;
+}
+
+/* ============================================================================
+   Loader
+   ============================================================================ */
+let DATA = null, modelOrder = [], stackMode = "surface";
+const $ = id => document.getElementById(id);
+function show(id) { ["landing","loading","dashboard"].forEach(x => $(x).classList.toggle("hidden", x !== id)); }
+
+function boot() {
+  fetch("data.json", { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("no data.json"); return r.json(); })
+    .then(data => { DATA = data; if (!DATA._source) DATA._source = "file"; renderAll(); show("dashboard"); })
+    .catch(() => show("landing"));
+}
+$("pickBtn").addEventListener("click", () => $("folderInput").click());
+$("repickBtn").addEventListener("click", () => $("folderInput").click());
+$("folderInput").addEventListener("change", async (e) => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  const hadData = !!DATA;   // don't destroy an already-loaded dashboard on a bad re-pick
+  show("loading");
+  $("progressText").textContent = `Scanning ${files.length.toLocaleString()} files…`;
+  try {
+    const next = await ingestFolder(files, {   // ingest into a local; commit only on success
+      onProgress: (done, total) => {
+        $("progressBar").style.width = (100 * done / total) + "%";
+        if (done % 15 === 0 || done === total) $("progressText").textContent = `Reading transcripts… ${done.toLocaleString()} / ${total.toLocaleString()} files`;
+      },
+    });
+    if (!next.parsed_messages) {
+      $("progressText").innerHTML = "No priced Claude usage found there. Pick <code>~/.claude</code> (or <code>~/Library/Application&nbsp;Support/Claude</code> for Cowork); reveal hidden folders with ⌘⇧. in the dialog, then try again.";
+      setTimeout(() => show(hadData ? "dashboard" : "landing"), 3200);
+      return;
+    }
+    DATA = next; renderAll(); show("dashboard");
+  } catch (err) {
+    console.error(err);
+    $("progressText").textContent = "Something went wrong reading that folder. See the console for details.";
+    setTimeout(() => show(hadData ? "dashboard" : "landing"), 3000);
+  }
+});
+$("exportBtn").addEventListener("click", () => {
+  const copy = { ...DATA }; delete copy._source;
+  const blob = new Blob([JSON.stringify(copy, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "data.json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ============================================================================
+   Render
+   ============================================================================ */
+function renderAll() {
+  modelOrder = Object.keys(DATA.by_model).sort((a,b) => DATA.by_model[b].cost - DATA.by_model[a].cost);
+  renderHeader(); renderCaveat(); renderStats(); renderCoworkSpot();
+  renderDayChart(); renderInsights(); renderModelBars(); renderSurfaceBars(); renderSessions(); renderFooter();
+}
+function fmtUSD(v, d) { d = d === undefined ? 2 : d; return "$" + (v||0).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d}); }
+function fmtTokens(v) { v=v||0; if (v>=1e9) return (v/1e9).toFixed(2)+"B"; if (v>=1e6) return (v/1e6).toFixed(1)+"M"; if (v>=1e3) return (v/1e3).toFixed(1)+"K"; return String(v); }
+function fmtDay(d) { return new Date(d+"T00:00:00").toLocaleDateString(undefined, {month:"short", day:"numeric"}); }
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+const tooltip = $("tooltip");
+function showTooltip(html, evt) { tooltip.innerHTML = html; tooltip.style.opacity = 1; tooltip.style.left = (evt.clientX+14)+"px"; tooltip.style.top = (evt.clientY+14)+"px"; }
+function hideTooltip() { tooltip.style.opacity = 0; }
+
+function renderHeader() {
+  const f = DATA.earliest_ts ? new Date(DATA.earliest_ts) : null, l = DATA.latest_ts ? new Date(DATA.latest_ts) : null;
+  const fmt = d => d.toLocaleDateString(undefined, {year:"numeric", month:"short", day:"numeric"});
+  const src = DATA._source === "browser" ? "computed live in your browser" : "from data.json";
+  $("subHeader").textContent = (f && l ? `${fmt(f)} – ${fmt(l)}` : "") + ` · ${DATA.days.length} days · timezone ${DATA.timezone} · ${src}`;
+}
+function renderCaveat() {
+  $("caveat").innerHTML =
+    `<b>What this covers.</b> Every Claude API call your local tools logged, across four surfaces: ` +
+    `<b>Claude Code (terminal)</b>, <b>Claude Code (Desktop)</b>, <b>Claude Cowork</b>, and <b>Agent-SDK apps</b>. ` +
+    `Cowork tasks run Claude Code inside a sandboxed VM whose transcripts mirror to disk (<code>entrypoint: "local-agent"</code>), ` +
+    `which is what lets this tool surface Cowork cost separately. Most trackers can't see it. ` +
+    `<b>One thing it can't see:</b> plain claude.ai web chat isn't logged locally, so it's absent here. ` +
+    `Costs are estimated from published per-model API pricing (input/output/cache-write/cache-read), not your actual subscription bill.`;
+}
+function renderStats() {
+  const tiles = [
+    ["Total estimated cost", fmtUSD(DATA.total_cost, 2)],
+    ["Total tokens", fmtTokens(DATA.total_tokens)],
+    ["API calls priced", (DATA.parsed_messages||0).toLocaleString()],
+    ["Sessions", (DATA.total_sessions||0).toLocaleString()],
+    ["Days covered", String(DATA.days.length)],
+  ];
+  $("statRow").innerHTML = tiles.map(([l,v]) => `<div class="stat-tile"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+}
+
+function renderCoworkSpot() {
+  const el = $("coworkSpot");
+  const cw = DATA.by_surface["Claude Cowork"];
+  if (cw && cw.cost > 0) {
+    const share = DATA.total_cost > 0 ? (cw.cost / DATA.total_cost * 100) : 0;
+    const shareStr = share < 0.1 ? "<0.1%" : share.toFixed(1) + "%";
+    const n = cw.sessions || 0;                 // accurate per-surface count from the ETL
+    const sessStr = n ? `${n.toLocaleString()} session${n===1?"":"s"} · ` : "";
+    const barW = share > 0 ? `max(3px, ${Math.min(100,share)}%)` : "0";
+    el.innerHTML =
+      `<div class="cowork-strip">
+        <div class="hex">⬢</div>
+        <div>
+          <div class="eyebrow">Claude Cowork · rarely tracked</div>
+          <div class="head">${fmtUSD(cw.cost)}</div>
+          <div class="desc"><b>Cowork runs your Claude agent tasks inside a sandboxed VM</b>, in a separate session tree most tools never read. Almost no cost tracker breaks it out; this one isolates its token spend automatically.</div>
+        </div>
+        <div class="figures"><div class="big">${shareStr}</div><div class="small">${sessStr}of total spend</div><div class="microbar"><div style="width:${barW}"></div></div></div>
+      </div>`;
+  } else {
+    el.innerHTML =
+      `<div class="cowork-strip empty">
+        <div class="hex">⬢</div>
+        <div>
+          <div class="eyebrow">Claude Cowork · nothing tracked yet</div>
+          <div class="head">No Cowork usage yet.</div>
+          <div class="desc"><b>Cowork runs Claude agent tasks inside a sandboxed VM</b>, logging to a session tree almost every other cost tracker ignores. When you run a Cowork task, its cost is tracked separately and appears here, in green. <span style="color:var(--text-muted)">On macOS, add <code>~/Library/Application&nbsp;Support/Claude</code> when loading to include it.</span></div>
+        </div>
+      </div>`;
+  }
+}
+
+function niceCeil(v) { if (v<=0) return 1; const mag=Math.pow(10,Math.floor(Math.log10(v))); const n=v/mag; let x; if(n<=1)x=1;else if(n<=2)x=2;else if(n<=5)x=5;else x=10; return x*mag; }
+function activeSurfaces() { return SURFACE_ORDER.filter(s => DATA.by_surface[s]); }
+function renderDayChart() {
+  const svg = $("dayChart"), days = DATA.days;
+  const W = svg.parentElement.clientWidth || 1000, H = 300;
+  const mL=54, mR=10, mT=10, mB=26, plotW=W-mL-mR, plotH=H-mT-mB;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  if (!days.length) return;
+  const niceMax = niceCeil(Math.max(1, ...days.map(d => d.cost)));
+  const barGap = days.length > 120 ? 1 : 2;
+  const barW = Math.max(1, plotW/days.length - barGap);
+  const SVGNS = "http://www.w3.org/2000/svg";
+  for (let i=0;i<=4;i++) {
+    const v = niceMax*i/4, y = mT+plotH-(v/niceMax)*plotH;
+    const line = document.createElementNS(SVGNS,"line");
+    line.setAttribute("x1",mL); line.setAttribute("x2",W-mR); line.setAttribute("y1",y); line.setAttribute("y2",y);
+    line.setAttribute("class", i===0?"baseline":"gridline"); svg.appendChild(line);
+    const t = document.createElementNS(SVGNS,"text");
+    t.setAttribute("x",mL-8); t.setAttribute("y",y+3); t.setAttribute("text-anchor","end"); t.setAttribute("class","axis-label");
+    t.textContent = "$"+Math.round(v).toLocaleString(); svg.appendChild(t);
+  }
+  const keysFn = stackMode==="surface" ? (d => activeSurfaces().filter(k => d.by_surface[k])) : (d => modelOrder.filter(k => d.by_model[k]));
+  const colorFor = k => stackMode==="surface" ? cssVar(SURFACE_COLOR_VARS[k]||"--text-muted") : cssVar(MODEL_COLOR_ORDER[modelOrder.indexOf(k)%MODEL_COLOR_ORDER.length]);
+  const bucketFor = (d,k) => stackMode==="surface" ? d.by_surface[k] : d.by_model[k];
+  days.forEach((d,i) => {
+    const x = mL + i*(plotW/days.length) + barGap/2;
+    let yC = mT+plotH; const keys = keysFn(d);
+    keys.forEach((k,ki) => {
+      const b = bucketFor(d,k), segH = (b.cost/niceMax)*plotH, y = yC-segH;
+      // leave a ~2px surface gap between stacked fills so adjacent segments read
+      // apart even for hard-to-distinguish hue pairs (dataviz relief + CVD aid)
+      const h = segH > 3 ? segH - 2 : Math.max(0, segH);
+      const rect = document.createElementNS(SVGNS,"rect");
+      rect.setAttribute("x",x); rect.setAttribute("y",y); rect.setAttribute("width",barW); rect.setAttribute("height",h);
+      rect.setAttribute("fill",colorFor(k)); rect.setAttribute("class","bar-seg"); rect.setAttribute("rx",ki===keys.length-1?2:0);
+      rect.addEventListener("mousemove", evt => showTooltip(`<b>${fmtDay(d.day)}</b><br>${escapeHtml(k)}: ${fmtUSD(b.cost)}<br>${b.count.toLocaleString()} calls · ${fmtTokens(b.tokens)} tokens<br><span style="opacity:.7">day total: ${fmtUSD(d.cost)}</span>`, evt));
+      rect.addEventListener("mouseleave", hideTooltip);
+      svg.appendChild(rect); yC = y;
+    });
+    const step = Math.ceil(days.length/10);
+    if (i % step === 0) {
+      const t = document.createElementNS(SVGNS,"text");
+      t.setAttribute("x",x+barW/2); t.setAttribute("y",H-8); t.setAttribute("text-anchor","middle"); t.setAttribute("class","axis-label");
+      t.textContent = fmtDay(d.day); svg.appendChild(t);
+    }
+  });
+  renderDayLegend();
+}
+function renderDayLegend() {
+  $("stackModeLabel").textContent = stackMode;
+  let keys, cf;
+  if (stackMode==="surface") { keys = activeSurfaces(); cf = k => cssVar(SURFACE_COLOR_VARS[k]||"--text-muted"); }
+  else { keys = modelOrder; cf = k => cssVar(MODEL_COLOR_ORDER[modelOrder.indexOf(k)%MODEL_COLOR_ORDER.length]); }
+  $("dayLegend").innerHTML = keys.map(k => `<span class="item"><span class="swatch" style="background:${cf(k)}"></span>${escapeHtml(k)}</span>`).join("");
+}
+$("stackToggle").addEventListener("click", e => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  stackMode = btn.dataset.mode;
+  [...$("stackToggle").querySelectorAll("button")].forEach(b => b.classList.toggle("active", b===btn));
+  renderDayChart();
+});
+window.addEventListener("resize", () => { if (DATA && !$("dashboard").classList.contains("hidden")) renderDayChart(); });
+
+function renderInsights() {
+  const out = [];
+  const push = (mk, html, cls) => out.push(`<div class="insight${cls?" "+cls:""}"><span class="mk">${mk}</span><span>${html}</span></div>`);
+  if (modelOrder.length) {
+    const m = modelOrder[0], v = DATA.by_model[m], share = DATA.total_cost>0 ? v.cost/DATA.total_cost*100 : 0;
+    push("◆", `<b>${escapeHtml(m)}</b> is your biggest line item: ${fmtUSD(v.cost)}, <b>${share.toFixed(0)}%</b> of all spend.`);
+  }
+  const top = DATA.top_sessions || [];
+  if (top[0]) {
+    const share = DATA.total_cost>0 ? top[0].cost/DATA.total_cost*100 : 0;
+    push("◆", `Priciest session, <b>${escapeHtml(top[0].title||"(untitled)")}</b>: <b>${fmtUSD(top[0].cost)}</b> over ${top[0].count.toLocaleString()} calls, ${share.toFixed(0)}% of the whole period in one thread.`);
+  }
+  if (top.length >= 5) {
+    const top5 = top.slice(0,5).reduce((a,s)=>a+s.cost,0);
+    const share = DATA.total_cost>0 ? top5/DATA.total_cost*100 : 0;
+    push("◆", `Spend is concentrated: your <b>top 5 sessions</b> are <b>${share.toFixed(0)}%</b> of all cost.`);
+  }
+  const st = DATA.session_stats;
+  if (st && st.count) {
+    push("◆", `Session length is lopsided: median <b>${st.median_msgs.toLocaleString()}</b> calls, longest <b>${st.max_msgs.toLocaleString()}</b>. ${st.over_1000} session${st.over_1000===1?"":"s"} passed 1,000 calls.`, st.over_2000>0?"warn":"");
+  }
+  let ci=0, cr=0, cw=0;
+  for (const m of Object.keys(DATA.by_model)) { const v=DATA.by_model[m]; ci+=v.input_tokens||0; cr+=v.cache_read_tokens||0; cw+=v.cache_write_tokens||0; }
+  if (ci+cr+cw>0) push("◆", `Prompt caching is working: <b>${(100*cr/(ci+cr+cw)).toFixed(0)}%</b> of input tokens were served from cache at ~0.1× price, not re-billed in full.`);
+  const withOut = Object.keys(DATA.by_model).filter(m => DATA.by_model[m].count>50).map(m => ({m, avg: DATA.by_model[m].output_tokens/DATA.by_model[m].count}));
+  if (withOut.length >= 2) {
+    withOut.sort((a,b)=>b.avg-a.avg); const hi=withOut[0], lo=withOut[withOut.length-1];
+    const ratio = lo.avg>0 ? (hi.avg/lo.avg) : 0;
+    push("◆", `Verbosity varies: <b>${escapeHtml(hi.m)}</b> averages ${Math.round(hi.avg).toLocaleString()} output tokens/call${ratio>=1.3?`, ~${ratio.toFixed(1)}× <b>${escapeHtml(lo.m)}</b>`:""}.`);
+  }
+  if (DATA.days.length >= 8) {
+    const d = DATA.days, last7 = d.slice(-7).reduce((a,x)=>a+x.cost,0), prev7 = d.slice(-14,-7).reduce((a,x)=>a+x.cost,0);
+    if (prev7 > 0) { const delta = (last7-prev7)/prev7*100; push(delta>=0?"▲":"▼", `Last 7 days: <b>${fmtUSD(last7)}</b>, ${delta>=0?"up":"down"} <b>${Math.abs(delta).toFixed(0)}%</b> from the prior week.`); }
+  }
+  // (Cowork gets its own dedicated spotlight strip above; not repeated here to avoid over-stating it.)
+  $("insights").innerHTML = out.join("");
+}
+
+function renderModelBars() {
+  const el = $("modelBars"), maxCost = Math.max(...modelOrder.map(m => DATA.by_model[m].cost), 1);
+  el.innerHTML = modelOrder.map((m,i) => {
+    const v = DATA.by_model[m], color = cssVar(MODEL_COLOR_ORDER[i%MODEL_COLOR_ORDER.length]);
+    return `<div class="model-row" title="${v.count.toLocaleString()} calls · ${fmtTokens(v.tokens)} tokens">
+      <div class="name">${escapeHtml(m)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${v.cost/maxCost*100}%;background:${color}"></div></div>
+      <div class="value">${fmtUSD(v.cost)}</div></div>`;
+  }).join("");
+}
+function renderSurfaceBars() {
+  const el = $("surfaceBars"), surfaces = activeSurfaces(), maxCost = Math.max(...surfaces.map(s => DATA.by_surface[s].cost), 1);
+  el.innerHTML = surfaces.map(s => {
+    const v = DATA.by_surface[s], color = cssVar(SURFACE_COLOR_VARS[s]||"--text-muted"), isCw = s==="Claude Cowork";
+    return `<div class="surface-row${isCw?" is-cowork":""}" title="${v.count.toLocaleString()} calls · ${fmtTokens(v.tokens)} tokens">
+      <div class="name"><span class="dot" style="background:${color}"></span>${escapeHtml(s)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${v.cost/maxCost*100}%;background:${color}"></div></div>
+      <div class="value">${fmtUSD(v.cost)}</div></div>`;
+  }).join("");
+}
+
+let sessionSort = {key:"cost", dir:-1};
+function renderSessions() {
+  const rows = (DATA.top_sessions||[]).map((s,i) => ({...s, rank:i+1}));
+  sortRows(rows);
+  $("sessionsBody").innerHTML = rows.map((s,i) => {
+    const color = cssVar(SURFACE_COLOR_VARS[s.surface] || "--text-muted");
+    const models = Object.keys(s.models||{}).sort((a,b)=>s.models[b]-s.models[a]).slice(0,3).join(", ");
+    const lastDate = s.last_ts ? new Date(s.last_ts).toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "";
+    let proj = (s.project || "").replace(/^-Users-[^-]+-claude-code-workarea-?/, "").replace(/^-/, "") || "root";
+    if (proj.startsWith("local_")) proj = "cowork task " + proj.slice(6,14);
+    const isCw = s.surface === "Claude Cowork";
+    return `<tr class="${isCw?"cowork-row":""}">
+      <td>${i+1}</td>
+      <td class="title-cell"><div class="t">${escapeHtml(s.title||"(untitled)")}</div><div class="p">${escapeHtml(proj)}${models?" · "+escapeHtml(models):""}</div></td>
+      <td><span class="badge" style="background:${color}">${SURFACE_BADGE[s.surface]||escapeHtml(s.surface)}</span></td>
+      <td class="cost">${fmtUSD(s.cost)}</td><td class="num">${fmtTokens(s.tokens)}</td><td class="num">${s.count.toLocaleString()}</td><td class="num">${lastDate}</td></tr>`;
+  }).join("");
+}
+function sortRows(rows) {
+  const {key,dir} = sessionSort;
+  rows.sort((a,b) => { let av=a[key], bv=b[key]; if (key==="title"){av=a.title||"";bv=b.title||"";} if (typeof av==="string") return dir*av.localeCompare(bv); return dir*((av||0)-(bv||0)); });
+}
+$("sessionsTable").querySelector("thead").addEventListener("click", e => {
+  const th = e.target.closest("th"); if (!th) return; const key = th.dataset.key;
+  if (sessionSort.key===key) sessionSort.dir*=-1; else sessionSort = {key, dir:(key==="title"||key==="surface")?1:-1};
+  renderSessions();
+});
+
+function renderFooter() {
+  const gen = DATA.generated_at ? new Date(DATA.generated_at).toLocaleString() : "unknown";
+  const refresh = DATA._source === "browser" ? `Recompute anytime with “Load a folder”.` : `To refresh, run <code>python3 etl.py</code> and reload.`;
+  $("footNote").innerHTML =
+    `Generated ${gen}. Costs are estimates from published per-token API pricing ` +
+    `(input/output at list rates, cache writes 1.25× for 5-minute TTL / 2× for 1-hour TTL, cache reads 0.1×) ` +
+    `applied to logged token counts, not a substitute for your actual invoice. ${refresh}`;
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Generated usage/cost data — NEVER commit real usage. This is your personal data.
+data.json
+*.data.json
+
+# Parity fixtures are generated from make_fixtures.py; keep them out of the repo
+# (regenerate with `npm run fixtures`). Comment this out if you prefer to commit them.
+test/fixtures/
+
+# Node / tooling
+node_modules/
+npm-debug.log*
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
