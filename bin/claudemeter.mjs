@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /* ============================================================================
- * claudemeter CLI — `npx claudemeter`
+ * claudemeter CLI - `npx @htrap94/claudemeter`
  *
  * Scans your local Claude transcript trees (reading the filesystem directly, so
  * no folder-picker and no macOS hidden-folder friction), prices them with the
- * SAME shared ETL the browser uses (etl.js — kept byte-identical to etl.py by
+ * SAME shared ETL the browser uses (etl.js - kept byte-identical to etl.py by
  * test/parity.mjs), then serves the self-contained dashboard and opens it.
  *
  * Everything runs locally. No data leaves your machine; no network calls.
  *
- *   npx claudemeter                 scan, serve, and open the dashboard
- *   npx claudemeter --no-open       don't auto-open the browser
- *   npx claudemeter --port 9000     choose the port
- *   npx claudemeter --tz UTC        day-bucket in a specific IANA timezone
- *   npx claudemeter --root DIR      scan a custom root instead of defaults (repeatable)
- *   npx claudemeter --out FILE      just write data.json and exit (no server)
+ *   npx @htrap94/claudemeter                 scan, serve, and open the dashboard
+ *   npx @htrap94/claudemeter --no-open       don't auto-open the browser
+ *   npx @htrap94/claudemeter --port 9000     choose the port
+ *   npx @htrap94/claudemeter --tz UTC        day-bucket in a specific IANA timezone
+ *   npx @htrap94/claudemeter --root DIR      scan a custom root instead of defaults (repeatable)
+ *   npx @htrap94/claudemeter --out FILE      just write data.json and exit (no server)
  * ==========================================================================*/
 import { createReadStream, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -129,7 +129,7 @@ async function main() {
     console.log(`claudemeter - local-first Claude usage & cost dashboard (nothing leaves your machine)
 
 Usage:
-  npx claudemeter [options]
+  npx @htrap94/claudemeter [options]
 
 Options:
   --no-open       don't auto-open the browser (just print the URL)

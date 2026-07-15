@@ -13,6 +13,14 @@ It is the only usage tracker that breaks out **Claude Cowork** cost, which lives
 
 ## Run it (no install)
 
+**Fastest, if you have Node:**
+
+```bash
+npx @htrap94/claudemeter
+```
+
+It scans your local Claude folders, prices everything, and opens the dashboard. Nothing is installed permanently, nothing leaves your machine.
+
 **Option A. Open it in your browser.** Download [`index.html`](index.html), double-click it, and click **“Choose your Claude folder.”** Everything is computed in the page. No Node, no Python, no server, nothing uploaded. (Or host `index.html` on any static site / GitHub Pages and visit the URL.)
 
 When the picker opens, select the folder with your Claude data:
